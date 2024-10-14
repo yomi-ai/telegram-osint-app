@@ -1,14 +1,15 @@
 from nest.core import Injectable
+
+from src.providers.config.config_service import ConfigService
 from src.providers.cost_calculator.services.model_resolver_service import (
     ModelResolverService,
-)
-from src.providers.cost_calculator.services.token_counter_service import (
-    TokenCounterService,
 )
 from src.providers.cost_calculator.services.pricing_data_service import (
     PricingDataService,
 )
-from src.providers.config.config_service import ConfigService
+from src.providers.cost_calculator.services.token_counter_service import (
+    TokenCounterService,
+)
 
 
 @Injectable()
