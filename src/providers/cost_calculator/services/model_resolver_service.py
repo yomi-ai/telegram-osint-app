@@ -1,9 +1,10 @@
 from nest.core import Injectable
-from src.providers.cost_calculator.services.token_counter_service import (
-    TokenCounterService,
-)
+
 from src.providers.cost_calculator.services.pricing_data_service import (
     PricingDataService,
+)
+from src.providers.cost_calculator.services.token_counter_service import (
+    TokenCounterService,
 )
 
 

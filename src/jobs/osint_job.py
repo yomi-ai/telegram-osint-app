@@ -3,7 +3,7 @@ import asyncio
 from nest.core import Injectable
 
 from src.providers.logger.logger_service import Logger
-from src.providers.openai.services.openai_service import OpenaiService
+from src.providers.openai.services.openai_service import OpenAIClientService
 from src.providers.telegram.telegram_service import TelegramService
 
 
@@ -12,7 +12,7 @@ class OsintJob:
     def __init__(
         self,
         telegram_service: TelegramService,
-        openai_service: OpenaiService,
+        openai_service: OpenAIClientService,
         logger_service: Logger,
     ):
         self.telegram_service = telegram_service

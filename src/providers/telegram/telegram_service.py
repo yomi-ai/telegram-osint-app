@@ -1,17 +1,17 @@
 import asyncio
+import json
 from datetime import datetime, timedelta
+from typing import IO
 
 import pytz
-import json
 from nest.core import Injectable
 from pydantic.dataclasses import dataclass
 from telethon import TelegramClient
 from telethon.tl.patched import Message
-from typing import IO
 
 from src.providers.config.config_service import ConfigService
-from src.providers.telegram.telegram_model import TelegramSettings
 from src.providers.logger.logger_service import Logger
+from src.providers.telegram.telegram_model import TelegramSettings
 
 CHANNELS = [
     "From_hebron",
@@ -30,10 +30,10 @@ class TelegramService:
     ISRAEL_TZ = pytz.timezone("Asia/Jerusalem")
 
     def __init__(
-            self,
-            config_service: ConfigService,
-            logger: Logger,
-            telegram_settings: TelegramSettings = TelegramSettings(),
+        self,
+        config_service: ConfigService,
+        logger: Logger,
+        telegram_settings: TelegramSettings = TelegramSettings(),
     ):
         """
         Initializes the TelegramService with the provided Telegram settings.
@@ -50,7 +50,7 @@ class TelegramService:
         )
 
     async def read_messages_from_channel(
-            self, channel_username: str, threshold_time: datetime
+        self, channel_username: str, threshold_time: datetime
     ) -> list[dict]:
         """
         Reads messages from a specified Telegram channel within the given time interval.
@@ -131,7 +131,7 @@ class TelegramService:
                 )
 
         await self.disconnect()
-        with open(f"{datetime.now()}/messages.json", 'w') as file:
+        with open(f"{datetime.now()}/messages.json", "w") as file:
             json.dumps(messages, file, indent=4)
 
         return messages
@@ -167,7 +167,7 @@ class TelegramService:
         return messages
 
     def translate_and_filter_important_messages(
-            self, messages: list[Message]
+        self, messages: list[Message]
     ) -> list[Message]:
         """
         Filters and translates important messages. This is a placeholder function, and you should replace

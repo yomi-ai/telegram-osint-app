@@ -15,10 +15,9 @@ class AppModule:
 
 app = PyNestFactory.create(
     AppModule,
-    description="This is my PyNest app.",
-    title="PyNest Application",
+    description="Telegram based app for fetching, and processing messages from telegram",
+    title="Osint Telegram App",
     version="1.0.0",
-    debug=True,
 )
 
 http_server = app.get_server()

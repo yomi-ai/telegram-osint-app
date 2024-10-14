@@ -1,14 +1,17 @@
 # src/services/openai_client_service.py
 import base64
-from typing import Optional
-from pydantic import BaseModel
 import os
+from typing import Optional
+
 import openai
 from dotenv import load_dotenv
 from nest.core import Injectable
+from pydantic import BaseModel
 
-from src.services.cost_calculator_service import CostCalculatorService
 from src.providers.config.config_service import ConfigService
+from src.providers.cost_calculator.services.cost_calculator_service import (
+    CostCalculatorService,
+)
 
 # Load environment variables from a .env file
 load_dotenv()
