@@ -1,0 +1,5 @@
+apiVersion: v2
+name: telegram-osint-app
+description: telegram-osint-app
+type: application
+version: 0.1.0

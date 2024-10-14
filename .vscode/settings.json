@@ -1,0 +1,5 @@
+{
+    "yaml.schemas": {
+        "https://github.com/helmwave/helmwave/releases/download/v0.41.0/schema.json": "helmwave.yml"
+    }
+}
