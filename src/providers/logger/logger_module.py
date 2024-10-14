@@ -1,10 +1,10 @@
 from nest.core import Module
 
-from .logger_service import LoggerService
+from .logger_service import Logger
 
 
 @Module(
-    providers=[LoggerService],
-    exports=[LoggerService],
+    providers=[Logger],
+    exports=[Logger],
 )
 class LoggerModule: ...
