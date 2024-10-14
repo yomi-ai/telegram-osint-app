@@ -1,4 +1,3 @@
-
 from nest.core import Injectable
 
 
@@ -10,4 +9,3 @@ class AppService:
 
     def get_app_info(self):
         return {"app_name": self.app_name, "app_version": self.app_version}
-

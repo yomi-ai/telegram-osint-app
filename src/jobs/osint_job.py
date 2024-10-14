@@ -2,8 +2,8 @@ import asyncio
 
 from nest.core import Injectable
 
-from src.providers.logger.logger_service import LoggerService
-from src.providers.openai.openai_service import OpenaiService
+from src.providers.logger.logger_service import Logger
+from src.providers.openai.services.openai_service import OpenaiService
 from src.providers.telegram.telegram_service import TelegramService
 
 
@@ -13,7 +13,7 @@ class OsintJob:
         self,
         telegram_service: TelegramService,
         openai_service: OpenaiService,
-        logger_service: LoggerService
+        logger_service: Logger,
     ):
         self.telegram_service = telegram_service
         self.openai_service = openai_service
@@ -27,5 +27,4 @@ class OsintJob:
                 self.logger_service.log.error(e)
             finally:
                 print("OsintJob finished")
-                await asyncio.sleep(5*60)
-
+                await asyncio.sleep(5 * 60)

@@ -8,4 +8,3 @@ from .config_service import ConfigService
     exports=[ConfigService],
 )
 class ConfigModule: ...
-
