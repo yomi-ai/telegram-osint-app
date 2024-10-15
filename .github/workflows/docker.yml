@@ -1,14 +1,10 @@
-name: Docker
-
 on:
   push:
   delete:
 
 jobs:
-  buildordelete:
+  build-or-delete:
     runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.meta.outputs.tags[0] }}
     permissions:
       contents: read
       packages: write
@@ -68,30 +64,3 @@ jobs:
           name: ${{ matrix.target }}
           token: ${{ github.token }}
           untagged-keep-latest: 3
-
-  preview-or-update:
-    runs-on: ubuntu-latest
-    needs: buildordelete
-    steps:
-      - uses: actions/checkout@v4
-        if: github.event_name == 'push'
-      - uses: helmwave/setup-action@v0.3.0
-        name: Install helmwave
-        if: github.event_name == 'push'
-        with:
-            version: '0.41.1'
-      - name: Configure values
-        if: github.event_name == 'push'
-        run: |
-          echo -e "image:\n  tag: ${{ needs.buildordelete.outputs.tag }}" > infrastructure/helm-chart/values.yaml
-          echo 'imagePullSecretsDockerconfigjson: '\'${{ secrets.IMAGE_PULL_SECRETS_DOCKERCONFIGJSON }}\' >> infrastructure/helm-chart/values.yaml
-      - name: Setup kubeconfig
-        run: |
-          mkdir ${HOME}/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ${HOME}/.kube/config
-      - name: plan
-        run: helmwave build -f infrastructure/helmwave.yml
-        if: github.event_name == 'push'
-      - name: deploy
-        run: helmwave up -f infrastructure/helmwave.yml
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'

@@ -1,0 +1,25 @@
+on:
+  push:
+
+jobs:
+  preview-or-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helmwave/setup-action@v0.3.0
+        name: Install helmwave
+        with:
+            version: '0.41.1'
+      - name: Configure values
+        run: |
+          echo -e "image:\n  tag: sha-${GITHUB_SHA::7}" > infrastructure/helm-chart/values.yaml
+          echo "imagePullSecretsDockerconfigjsonBase64: ${{ secrets.IMAGE_PULL_SECRETS_DOCKERCONFIGJSON_BASE64 }}" >> infrastructure/helm-chart/values.yaml
+      - name: Setup kubeconfig
+        run: |
+          mkdir ${HOME}/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ${HOME}/.kube/config
+      - name: plan
+        run: helmwave build -f infrastructure/helmwave.yml
+      - name: deploy
+        run: helmwave up -f infrastructure/helmwave.yml
+        if: github.ref == 'refs/heads/main'
