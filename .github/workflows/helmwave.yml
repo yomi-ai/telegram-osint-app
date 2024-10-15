@@ -14,13 +14,13 @@ jobs:
         run: |
           echo -e "image:\n  tag: sha-${GITHUB_SHA::7}" > infrastructure/helm-chart/values.yaml
           echo "imagePullSecretsDockerconfigjsonBase64: ${{ secrets.IMAGE_PULL_SECRETS_DOCKERCONFIGJSON_BASE64 }}" >> infrastructure/helm-chart/values.yaml
-          
+
           echo "env:" >> infrastructure/helm-chart/values.yaml
-          echo "  API_ID: ${{ secrets.API_ID }}" >> infrastructure/helm-chart/values.yaml
-          echo "  API_HASH: ${{ secrets.API_HASH }}" >> infrastructure/helm-chart/values.yaml
-          echo "  TARGET_CHANNEL: ${{ secrets.TARGET_CHANNEL }}" >> infrastructure/helm-chart/values.yaml
-          echo "  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}" >> infrastructure/helm-chart/values.yaml
-          echo "  MODEL_NAME: ${{ secrets.MODEL_NAME }}" >> infrastructure/helm-chart/values.yaml
+          echo "  API_ID: '${{ secrets.API_ID }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  API_HASH: '${{ secrets.API_HASH }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  TARGET_CHANNEL: '${{ secrets.TARGET_CHANNEL }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MODEL_NAME: '${{ secrets.MODEL_NAME }}'" >> infrastructure/helm-chart/values.yaml
       - name: Setup kubeconfig
         run: |
           mkdir ${HOME}/.kube
