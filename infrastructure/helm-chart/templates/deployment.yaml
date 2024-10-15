@@ -20,6 +20,9 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "ghcr.io/yomi-ai/{{ .Chart.Name }}:{{ .Values.image.tag }}"
+          envFrom:
+          - secretRef:
+              name: {{ .Chart.Name }}-env
           ports:
             - name: http
               containerPort: 8000
