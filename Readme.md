@@ -58,11 +58,6 @@ The application requires certain environment variables to be set for configurati
 
 ### Required Environment Variables
 
-- **STAGE**: The application stage (e.g., `local`, `development`, `production`). Default is `local`.
-- **APP_NAME**: Name of the application. Default is `app`.
-- **APP_VERSION**: Version of the application. Default is `0.0.1`.
-- **APP_DESCRIPTION**: Description of the application.
-- **APP_DEBUG**: Debug mode (`True` or `False`). Default is `False`.
 - **OPENAI_API_KEY**: Your OpenAI API key.
 - **API_ID**: Your Telegram API ID.
 - **API_HASH**: Your Telegram API Hash.
@@ -74,12 +69,6 @@ The application requires certain environment variables to be set for configurati
 Create a file named `.env` in the root directory and add the following:
 
 ```env
-STAGE=local
-APP_NAME=Telegram OSINT App
-APP_VERSION=1.0.0
-APP_DESCRIPTION=An application for OSINT using Telegram
-APP_DEBUG=True
-
 OPENAI_API_KEY=your-openai-api-key
 
 API_ID=your-telegram-api-id
