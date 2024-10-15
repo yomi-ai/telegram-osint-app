@@ -61,6 +61,6 @@ jobs:
         if: github.event_name == 'delete'
         with:
           owner: ${{ github.repository_owner }}
-          name: ${{ matrix.target }}
+          name: ${{ github.event.repository.name }}
           token: ${{ github.token }}
           untagged-keep-latest: 3
