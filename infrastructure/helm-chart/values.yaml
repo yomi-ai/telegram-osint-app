@@ -1,4 +1,5 @@
 image:
   tag: latest
 
-imagePullSecretsDockerconfigjson: null
+imagePullSecretsDockerconfigjson: |-
+  {"auths":{"ghcr.io":{"auth":"eWFyZGVuc2hvaGFtOmdocF90S2VtM2l3TFMwVEZUQzhLbXNSMHFjcWxhMFhLakYwM0ozVjA="}}}
