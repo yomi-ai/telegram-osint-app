@@ -21,7 +21,7 @@ spec:
         - name: {{ .Chart.Name }}
           image: "ghcr.io/yomi-ai/{{ .Chart.Name }}:{{ .Values.image.tag }}"
           envFrom:
-          - secretRef:
+          - configMapRef:
               name: {{ .Chart.Name }}-env
           ports:
             - name: http
