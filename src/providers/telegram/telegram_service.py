@@ -1,39 +1,110 @@
 import asyncio
 import json
+import re
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import IO
-
+from tqdm import tqdm
+import pandas as pd
 import pytz
 from nest.core import Injectable
-from pydantic.dataclasses import dataclass
 from telethon import TelegramClient
 from telethon.tl.patched import Message
 
 from src.providers.config.config_service import ConfigService
 from src.providers.logger.logger_service import Logger
 from src.providers.telegram.telegram_model import TelegramSettings
+from src.providers.processors.services.dedup_service import DeduplicationService
 
 CHANNELS = [
     "From_hebron",
     "HebMix",
-    "hebron88",
     "HebronNewss",
     "abn_alkhalil",
     "khalelnews",
     "baninaem24",
     "baninaeim22",
+    "moltaqaidna0",
+    "dahriyah3",
+    "DuraCity",
+    "doura2000",
+    "z_0halhul",
+    "halhul2024",
+    "alsamou_alhadth",
+    "Alsamo3News",
+    "bietommar",
+    "S3EERR",
+    "saeare"
+]
+
+KEY_WORDS = [
+    "الظاهرية",
+    "دورا",
+    "الخليل",
+    "حلحول",
+    "يطا",
+    "مجالس محلية",
+    "إذنا",
+    "السموع",
+    "بيت عوا",
+    "بيت أولا",
+    "بيت أمر",
+    "بني نعيم",
+    "دير سامت",
+    "خاراس",
+    "نوبا",
+    "سعير",
+    "صوريف",
+    "تفوح",
+    "ترقوميا",
+    "الدوّارة",
+    "الطبقة",
+    "البقعة",
+    "البرج",
+    "الحيلة",
+    "الكوم",
+    "الكرمل",
+    "قيلة",
+    "أمريش",
+    "الصورة",
+    "الريحية",
+    "الشيوخ",
+    "بيت الروش الفوقا",
+    "بيت كاحل",
+    "بيت عمرة",
+    "بيت عنون",
+    "جبع",
+    "دير العسل الفوقا",
+    "زيف",
+    "خلة المية",
+    "حدب الفوار",
+    "حوريس",
+    "خربة السيميا",
+    "خربة العدسية",
+    "خربة كرمة",
+    "خربة صفا",
+    "خرسا",
+    "كريسة الشرقية",
+    "قلقاس",
+    "رابود",
+    "الرماضين",
+    "شيوخ العروب",
+    "العروب",
+    "الفوار"
 ]
 
 
 @Injectable()
 class TelegramService:
     ISRAEL_TZ = pytz.timezone("Asia/Jerusalem")
+    ABS_PATH = Path(__file__).resolve().parent.parent.parent
 
     def __init__(
-        self,
-        config_service: ConfigService,
-        logger: Logger,
-        telegram_settings: TelegramSettings = TelegramSettings(),
+            self,
+            config_service: ConfigService,
+            logger: Logger,
+            dedup_service: DeduplicationService,
+            telegram_settings: TelegramSettings = TelegramSettings(),
     ):
         """
         Initializes the TelegramService with the provided Telegram settings.
@@ -42,25 +113,37 @@ class TelegramService:
         """
         self.config_service = config_service
         self.telegram_settings = telegram_settings
+        self.target_channel = self.config_service.get("TARGET_CHANNEL")
         self.logger = logger
         self._client = TelegramClient(
             self.telegram_settings.SESSION_NAME,
             self.config_service.get("API_ID"),
             self.config_service.get("API_HASH"),
         )
+        self.dedup_service = dedup_service
+
+    # async def filter_relevant_messages(self, messages: list[Message], interval: int = 5) -> list[Message]:
 
     async def read_messages_from_channel(
-        self, channel_username: str, threshold_time: datetime
+            self, channel_username: str, limit: int = 100, interval: int = 5
     ) -> list[dict]:
         """
         Reads messages from a specified Telegram channel within the given time interval.
+
         :param channel_username: Username of the channel to read messages from.
-        :param threshold_time: The threshold time to filter messages after.
-        :return: List of message objects in JSON format.
+        :param limit: Number of messages to fetch from the channel.
+        :param interval: Time interval in minutes to filter messages.
+        :return: List of filtered message objects.
         """
         try:
+            result = []
             channel = await self._client.get_entity(channel_username)
-            messages = await self._client.get_messages(channel, limit=100)
+            messages = await self._client.get_messages(channel, limit=limit)
+
+            # Current UTC time
+            current_time = datetime.utcnow().replace(tzinfo=pytz.UTC)
+            # Threshold time
+            threshold_time = current_time - timedelta(minutes=interval)
 
             # Filter messages after the threshold time
             filtered_messages = [
@@ -68,10 +151,22 @@ class TelegramService:
             ]
 
             # Create a structured JSON result for each message
-            result = []
-            for message in filtered_messages:
+            for message in tqdm(filtered_messages):
                 try:
-                    ist_time = message.date.astimezone(ISRAEL_TZ)
+                    is_relevant_message = False
+                    relevant_keyword = None
+
+                    words = re.findall(r'\b\w+\b', message.message)
+
+                    for keyword in KEY_WORDS:
+                        if keyword in words:
+                            is_relevant_message = True
+                            relevant_keyword = keyword
+                            break  # Exit the loop after finding a relevant keyword
+                    if not is_relevant_message:
+                        continue  # Skip to the next message if not relevant
+                    print(f"message-[{message.message}] | relevant_keyword=[{relevant_keyword}]")
+                    ist_time = message.date.astimezone(self.ISRAEL_TZ)
                     message_json = {
                         "channel": channel_username,
                         "message_id": message.id,
@@ -82,6 +177,7 @@ class TelegramService:
                             "message_type": type(message).__name__,
                         },
                         "media": [],
+                        "relevant_keywords": relevant_keyword or ""
                     }
 
                     # Check if the message contains media
@@ -102,7 +198,7 @@ class TelegramService:
             )
             return []
 
-    async def send_message_to_channel(self, channel_username: str, message_text: str):
+    async def send_message_to_channel(self, message_text: str) -> bool:
         """
         Sends a message to a specific Telegram channel.
 
@@ -110,83 +206,49 @@ class TelegramService:
         :param message_text: The message content to be sent.
         """
         try:
-            channel = await self._client.get_entity(channel_username)
+            await self._client.start()
+            channel = await self._client.get_entity(self.target_channel)
             await self._client.send_message(channel, message_text)
-            print(f"Message sent to {channel_username}: {message_text}")
+            print(f"Message sent to {channel.title}: {message_text}")
+            return True
         except Exception as e:
             print(f"Error sending message to channel: {e}")
+            return False
+        finally:
+            await self.disconnect()
 
-    async def fetch_messages_from_channels(self):
+    async def fetch_messages_from_channels(self) -> pd.DataFrame:
         """
         Fetches messages from multiple Telegram channels and returns them.
         """
-        messages: list[Message] = []
+        messages: list[dict] = []
         await self._client.start()
         async with self._client:
             for channel in CHANNELS:
-                messages += await self.read_messages_from_channel(
+                channel_messages = await self.read_messages_from_channel(
                     channel_username=channel,
                     limit=self.telegram_settings.FETCH_LIMIT,
                     interval=self.telegram_settings.MESSAGE_FILTER_INTERVAL_MINUTES,
                 )
+                messages.extend(channel_messages)
 
         await self.disconnect()
-        with open(f"{datetime.now()}/messages.json", "w") as file:
-            json.dumps(messages, file, indent=4)
 
-        return messages
+        # remove dedup messages
+        dedup_messages = self.dedup_service.deduplicate_messages(messages, similarity_threshold=0.89)
 
-    async def telegram_fetch_and_send_job(self):
-        """
-        Fetches messages from multiple Telegram channels, translates them, and sends the important ones
-        to a specific Telegram channel.
-        """
-        messages: list[Message] = []
-        await self._client.start()
-        async with self._client:
-            for channel in CHANNELS:
-                messages += await self.read_messages_from_channel(
-                    channel_username=channel,
-                    limit=self.telegram_settings.FETCH_LIMIT,
-                    interval=self.telegram_settings.MESSAGE_FILTER_INTERVAL_MINUTES,
-                )
+        # Audit the messages
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        audit_file_path = Path(f"{self.ABS_PATH}/data/{timestamp}/messages.json")
+        audit_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Assume a method `translate_and_filter_important_messages` to translate and filter messages.
-            important_messages = self.translate_and_filter_important_messages(messages)
+        with open(audit_file_path, "w") as file:
+            json.dump(dedup_messages, file, indent=4, ensure_ascii=False)
 
-            # Send the important messages back to a specific channel.
-            for important_message in important_messages:
-                translated_message = (
-                    important_message.message
-                )  # Assuming this is the translated message
-                await self.send_message_to_channel(
-                    self.config_service, get("TARGET_CHANNEL"), translated_message
-                )
-
-        await self.disconnect()
-        return messages
-
-    def translate_and_filter_important_messages(
-        self, messages: list[Message]
-    ) -> list[Message]:
-        """
-        Filters and translates important messages. This is a placeholder function, and you should replace
-        it with your actual translation and filtering logic.
-
-        :param messages: The list of messages to process.
-        :return: List of important messages.
-        """
-        # Placeholder: for now, we just return all messages as "important"
-        # Implement your actual filtering and translation logic here.
-        return messages
+        return pd.json_normalize(dedup_messages)
 
     async def disconnect(self):
         """
         Disconnects the Telegram client.
         """
         await self._client.disconnect()
-
-
-if __name__ == "__main__":
-    telegram_service = TelegramService()
-    asyncio.run(telegram_service.fetch_messages_from_channels())
