@@ -1,0 +1,11 @@
+image:
+  tag: latest
+
+imagePullSecretsDockerconfigjsonBase64: null
+
+env:
+  API_ID: null
+  API_HASH: null
+  TARGET_CHANNEL: null
+  OPENAI_API_KEY: null
+  MODEL_NAME: null

@@ -1,0 +1,66 @@
+on:
+  push:
+  delete:
+
+jobs:
+  build-or-delete:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        if: github.event_name == 'push'
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        if: github.event_name == 'push'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        if: github.event_name == 'push'
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,enable={{is_default_branch}}
+            # branch event
+            type=ref,event=branch
+            # tag event
+            type=ref,event=tag
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        if: github.event_name == 'push'
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      # get the github.event.ref without the leading refs/heads/
+      - name: Extract deleted branch name
+        if: github.event_name == 'delete'
+        run: |
+          DELETE_REF="${{ github.event.ref }}"
+          echo "BRANCH_NAME=${DELETE_REF#refs/heads/}" >> $GITHUB_ENV
+      - name: Delete image on branch delete
+        uses: bots-house/ghcr-delete-image-action@v1.1.0
+        if: github.event_name == 'delete'
+        with:
+          owner: ${{ github.repository_owner }}
+          name: ${{ github.event.repository.name }}
+          token: ${{ github.token }}
+          tag: ${{ env.BRANCH_NAME }}
+      - name: Delete all untagged images on branch delete
+        uses: bots-house/ghcr-delete-image-action@v1.1.0
+        if: github.event_name == 'delete'
+        with:
+          owner: ${{ github.repository_owner }}
+          name: ${{ github.event.repository.name }}
+          token: ${{ github.token }}
+          untagged-keep-latest: 3
