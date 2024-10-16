@@ -13,24 +13,56 @@ from src.providers.cost_calculator.services.cost_calculator_service import (
     CostCalculatorService,
 )
 
+from typing import List, Optional
+from src.providers.logger.logger_service import Logger
+from tqdm import tqdm
+
 
 @Injectable()
 class OpenAIClientService:
+    BATCH_SIZE = 100
     """Service class to interact with OpenAI API and calculate costs."""
 
     def __init__(
-        self,
-        config_service: ConfigService,
-        cost_calculator_service: CostCalculatorService,
+            self,
+            config_service: ConfigService,
+            cost_calculator_service: CostCalculatorService,
+            logger: Logger,
     ):
         self.config_service = config_service
         self.model_name = self.config_service.get("MODEL_NAME")
         self.cost_calculator_service = cost_calculator_service
+        self.logger = logger
         openai.api_key = self.config_service.get("OPENAI_API_KEY")
 
         # Track total costs across multiple calls
         self.total_prompt_cost = 0.0
         self.total_completion_cost = 0.0
+
+    def get_embeddings(self, texts: List[str]) -> Optional[List[List[float]]]:
+        """
+        Generate embeddings for a list of texts using OpenAI's embedding API.
+
+        Args:
+            texts (List[str]): List of texts to generate embeddings for.
+
+        Returns:
+            Optional[List[List[float]]]: List of embeddings or None if failed.
+        """
+        embeddings = []
+        for i in tqdm(range(0, len(texts), self.BATCH_SIZE), desc="Generating embeddings"):
+            batch_texts = texts[i:i + self.BATCH_SIZE]
+            try:
+                response = openai.embeddings.create(
+                    input=batch_texts,
+                    model=self.config_service.get("OPENAI_EMBEDDING_MODEL")
+                )
+                batch_embeddings = [message.embedding for message in response.data]
+                embeddings.extend(batch_embeddings)
+            except Exception as e:
+                self.logger.log.error(f"Error generating embeddings: {e}")
+                return None  # Return None if there's an error
+        return embeddings
 
     def _encode_image(self, image_path: str) -> str | None:
         """Encode an image from a file path to a base64 string."""
@@ -112,7 +144,7 @@ class OpenAIClientService:
             return None
 
     def chat(self, system_message: str, user_message: str, image_path: Optional[str] = None,
-             response_format: Optional[BaseModel] = None, max_completion_tokens: Optional[int] = 300):
+             response_format: Optional[BaseModel] = None, max_completion_tokens: Optional[int] = 1000):
         """Main method to send a chat request to OpenAI with optional image input."""
 
         # Step 1: Prepare messages

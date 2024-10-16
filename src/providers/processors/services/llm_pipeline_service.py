@@ -28,18 +28,22 @@ class LLMPipelineService:
         for index, row in tqdm(
             df.iterrows(), total=len(df), desc="Processing messages"
         ):
-            message = row["message"]
+            try:
+                message = row["message"]
 
-            # Translation
-            translation = self.translator.translate(message)
-            df.at[index, "hebrew_translation"] = translation.hebrew
-            df.at[index, "english_translation"] = translation.english
+                # Translation
+                translation = self.translator.translate(message)
+                df.at[index, "hebrew_translation"] = translation.hebrew
+                # df.at[index, "english_translation"] = translation.english
 
-            # NER Extraction
-            ner_data = self.ner_service.extract_entities(translation.english)
-            df.at[index, "locations"] = ", ".join(ner_data.locations)
-            df.at[index, "people"] = ", ".join(ner_data.people)
-            df.at[index, "organizations"] = ", ".join(ner_data.organizations)
+                # NER Extraction
+                # ner_data = self.ner_service.extract_entities(translation.english)
+                # df.at[index, "locations"] = ", ".join(ner_data.locations)
+                # df.at[index, "people"] = ", ".join(ner_data.people)
+                # df.at[index, "organizations"] = ", ".join(ner_data.organizations)
+            except Exception as e:
+                print(e)
+                df.at[index, "hebrew_translation"] = None
 
         self.save_dataframe(df, self.ABS_PATH / "data" / "processed_data.json")
 

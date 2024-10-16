@@ -27,9 +27,13 @@ class OsintJob:
                     await self.telegram_service.fetch_messages_from_channels()
                 )
                 df = self.llm_pipeline_service.process_dataframe(telegram_messages)
+                for index, row in df.iterrows():
+                    message_to_send = row["hebrew_translation"]
+                    await self.telegram_service.send_message_to_channel(message_to_send)
+                    await asyncio.sleep(10)
 
             except Exception as e:
                 self.logger_service.log.error(e)
             finally:
                 print("OsintJob finished")
-                await asyncio.sleep(5 * 60)
+                await asyncio.sleep(10 * 60)

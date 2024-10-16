@@ -17,6 +17,7 @@ tiktoken = "^0.8.0"
 pandas = "^2.2.3"
 tqdm = "^4.66.5"
 click = "^8.1.6"
+scikit-learn = "^1.5.2"
 
 
 [build-system]

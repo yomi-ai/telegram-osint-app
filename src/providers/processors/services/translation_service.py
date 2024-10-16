@@ -14,9 +14,12 @@ class TranslationService:
             Act as a highly accurate translator. Your task is to take an Arabic message from a Telegram group 
             and translate it into both Hebrew and English. Follow the guidelines provided earlier.
         """
-        response = self.client.chat(
-            system_message=system_message,
-            user_message=message,
-            response_format=TranslationResponse,
-        )
-        return response
+        try:
+            response = self.client.chat(
+                system_message=system_message,
+                user_message=message,
+                response_format=TranslationResponse,
+            )
+            return response
+        except Exception as e:
+            return TranslationResponse(hebrew=None, english=None)
