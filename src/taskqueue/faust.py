@@ -32,7 +32,7 @@ app = faust.App(
     'telegram_osint_app',
     broker='kafka://' + config_service.get("KAFKA_BROKER", "localhost:9092"),
     value_serializer='pickle',
-    topic_partitions=3,
+    topic_partitions=1,
 )
 
 osint_jobs_topic = app.topic('osint_jobs')
