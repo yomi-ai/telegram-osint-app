@@ -6,7 +6,7 @@ from src.providers.logger.logger_service import Logger
 from src.providers.openai.services.openai_service import OpenAIClientService
 from src.providers.processors.services.llm_pipeline_service import LLMPipelineService
 from src.providers.telegram.telegram_service import TelegramService
-
+from src.taskqueue.faust import parse_messages
 
 @Injectable()
 class OsintJob:
@@ -26,12 +26,12 @@ class OsintJob:
                 telegram_messages = (
                     await self.telegram_service.fetch_messages_from_channels()
                 )
-                df = self.llm_pipeline_service.process_dataframe(telegram_messages)
-                for index, row in df.iterrows():
-                    message_to_send = row["hebrew_translation"]
-                    await self.telegram_service.send_message_to_channel(message_to_send)
-                    await asyncio.sleep(10)
-
+                print("Sending messages to the queue...")
+                failed_messages = await parse_messages.ask(telegram_messages)
+                if len(failed_messages) > 0:
+                    raise Exception("Failed to deliver these telegram messages to the target channel:\n" + "\n".join(failed_messages))
+                else:
+                    print("Messages successfully parsed!")
             except Exception as e:
                 self.logger_service.log.error(e)
             finally:

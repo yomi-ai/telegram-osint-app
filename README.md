@@ -84,7 +84,19 @@ Note: Replace the placeholder values (your-openai-api-key, your-telegram-api-id,
 
 ### Running Locally
 
-You can run the application locally using the following command:
+To run the application locally, you need to have a Kafka broker running. You can use the following command to start a local Kafka broker:
+
+```bash
+docker run -it --rm -p 9092:9092 --name broker apache/kafka:3.8.0
+```
+
+Once the Kafka broker is running, you can start the worker using the following command:
+
+```bash
+poetry run faust -A src.taskqueue.faust worker -l info
+```
+
+Finally, you can run the application locally using the following command:
 
 ```bash
 poetry run python main.py
@@ -104,11 +116,14 @@ Alternatively, you can run the application inside a Docker container.
 docker build -t telegram-osint-app:latest .
 ```
 
-## Run the Docker Container
+## Run the Docker Containers
 ```bash
-docker run -p 8000:8000 --env-file .env telegram-osint-app:latest
+docker run -p 6066:6066 --env-file .env telegram-osint-app:latest poetry run faust -A src.taskqueue.faust worker -l info
 ```
 
+```bash
+docker run -p 8000:8000 --env-file .env telegram-osint-app:latest poetry run python main.py
+```
 Note: Make sure your .env file is in the root directory and contains all the necessary environment variables.
 
 ## Project Structure

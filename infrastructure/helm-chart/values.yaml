@@ -9,3 +9,4 @@ env:
   TARGET_CHANNEL: null
   OPENAI_API_KEY: null
   MODEL_NAME: null
+  KAFKA_BROKER: kafka:9092

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-main
+  labels:
+    app: {{ .Chart.Name }}-main
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-main
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-main
+    spec:
+      enableServiceLinks: false
+      imagePullSecrets: 
+        - name: {{ .Chart.Name }}-registry-secret
+      containers:
+        - name: {{ .Chart.Name }}-main
+          image: "ghcr.io/yomi-ai/{{ .Chart.Name }}:{{ .Values.image.tag }}"
+          command: ["poetry", "run", "python", "main.py"]
+          envFrom:
+          - configMapRef:
+              name: {{ .Chart.Name }}-env
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 10Mi

@@ -1,25 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Chart.Name }}-worker
   labels:
-    app: {{ .Chart.Name }}
+    app: {{ .Chart.Name }}-worker
 spec:
   replicas: 0
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: {{ .Chart.Name }}-worker
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ .Chart.Name }}-worker
     spec:
       enableServiceLinks: false
       imagePullSecrets: 
         - name: {{ .Chart.Name }}-registry-secret
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ .Chart.Name }}-worker
           image: "ghcr.io/yomi-ai/{{ .Chart.Name }}:{{ .Values.image.tag }}"
+          command: ["poetry", "run", "faust", "-A", "src.taskqueue.faust", "worker", "-l", "info"]
           envFrom:
           - configMapRef:
               name: {{ .Chart.Name }}-env
