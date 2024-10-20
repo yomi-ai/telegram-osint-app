@@ -55,7 +55,7 @@ class OpenAIClientService:
             try:
                 response = openai.embeddings.create(
                     input=batch_texts,
-                    model=self.config_service.get("OPENAI_EMBEDDING_MODEL")
+                    model=self.config_service.get("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
                 )
                 batch_embeddings = [message.embedding for message in response.data]
                 embeddings.extend(batch_embeddings)
