@@ -7,3 +7,5 @@ controller:
 listeners:
   client:
     protocol: PLAINTEXT
+extraConfigYaml:
+  default.replication.factor: 1
