@@ -33,6 +33,7 @@ app = faust.App(
     broker='kafka://' + config_service.get("KAFKA_BROKER", "localhost:9092"),
     value_serializer='pickle',
     topic_partitions=1,
+    topic_replication_factor=1,
 )
 
 osint_jobs_topic = app.topic('osint_jobs')
