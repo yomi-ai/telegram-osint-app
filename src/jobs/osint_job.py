@@ -28,9 +28,14 @@ class OsintJob:
                 )
                 df = self.llm_pipeline_service.process_dataframe(telegram_messages)
                 for index, row in df.iterrows():
-                    message_to_send = row["hebrew_translation"]
-                    await self.telegram_service.send_message_to_channel(message_to_send)
-                    await asyncio.sleep(1)
+                    try:
+                        message_to_send = row["hebrew_translation"]
+                        message_to_send += f"\nhttps://t.me/{row['channel']}/{row['message_id']}"
+                        await self.telegram_service.send_message_to_channel(message_to_send)
+                        await asyncio.sleep(1)
+                    except Exception as e:
+                        self.logger_service.log.error(e)
+                        continue
 
             except Exception as e:
                 self.logger_service.log.error(e)
