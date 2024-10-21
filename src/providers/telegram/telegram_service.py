@@ -9,6 +9,7 @@ import pandas as pd
 import pytz
 from nest.core import Injectable
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 from telethon.tl.patched import Message
 
 from src.providers.config.config_service import ConfigService
@@ -34,7 +35,7 @@ CHANNELS = [
     "Alsamo3News",
     "bietommar",
     "S3EERR",
-    "saeare"
+    "saeare",
 ]
 
 KEY_WORDS = [
@@ -90,7 +91,7 @@ KEY_WORDS = [
     "الرماضين",
     "شيوخ العروب",
     "العروب",
-    "الفوار"
+    "الفوار",
 ]
 
 
@@ -100,32 +101,33 @@ class TelegramService:
     ABS_PATH = Path(__file__).resolve().parent.parent.parent
 
     def __init__(
-            self,
-            config_service: ConfigService,
-            logger: Logger,
-            dedup_service: DeduplicationService,
-            telegram_settings: TelegramSettings = TelegramSettings(),
+        self,
+        config_service: ConfigService,
+        logger: Logger,
+        dedup_service: DeduplicationService,
+        telegram_settings: TelegramSettings = TelegramSettings(),
     ):
-        """
-        Initializes the TelegramService with the provided Telegram settings.
-
-        :param telegram_settings: Configuration settings for Telegram API access.
-        """
         self.config_service = config_service
         self.telegram_settings = telegram_settings
         self.target_channel = self.config_service.get("TARGET_CHANNEL")
         self.logger = logger
+
+        # Load the session string from a secure location or environment variable
+        session_string = self.config_service.get("SESSION_STRING")
+        api_id = self.config_service.get("API_ID")
+        api_hash = self.config_service.get("API_HASH")
+
         self._client = TelegramClient(
-            self.telegram_settings.SESSION_NAME,
-            self.config_service.get("API_ID"),
-            self.config_service.get("API_HASH"),
+            StringSession(session_string),
+            api_id,
+            api_hash,
         )
         self.dedup_service = dedup_service
 
     # async def filter_relevant_messages(self, messages: list[Message], interval: int = 5) -> list[Message]:
 
     async def read_messages_from_channel(
-            self, channel_username: str, limit: int = 100, interval: int = 5
+        self, channel_username: str, limit: int = 100, interval: int = 5
     ) -> list[dict]:
         """
         Reads messages from a specified Telegram channel within the given time interval.
@@ -156,7 +158,7 @@ class TelegramService:
                     is_relevant_message = False
                     relevant_keyword = None
 
-                    words = re.findall(r'\b\w+\b', message.message)
+                    words = re.findall(r"\b\w+\b", message.message)
 
                     for keyword in KEY_WORDS:
                         if keyword in words:
@@ -165,7 +167,9 @@ class TelegramService:
                             break  # Exit the loop after finding a relevant keyword
                     if not is_relevant_message:
                         continue  # Skip to the next message if not relevant
-                    print(f"message-[{message.message}] | relevant_keyword=[{relevant_keyword}]")
+                    print(
+                        f"message-[{message.message}] | relevant_keyword=[{relevant_keyword}]"
+                    )
                     ist_time = message.date.astimezone(self.ISRAEL_TZ)
                     message_json = {
                         "channel": channel_username,
@@ -177,7 +181,7 @@ class TelegramService:
                             "message_type": type(message).__name__,
                         },
                         "media": [],
-                        "relevant_keywords": relevant_keyword or ""
+                        "relevant_keywords": relevant_keyword or "",
                     }
 
                     # Check if the message contains media
@@ -235,7 +239,9 @@ class TelegramService:
         await self.disconnect()
 
         # remove dedup messages
-        dedup_messages = self.dedup_service.deduplicate_messages(messages, similarity_threshold=0.89)
+        dedup_messages = self.dedup_service.deduplicate_messages(
+            messages
+        )
 
         # Audit the messages
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
