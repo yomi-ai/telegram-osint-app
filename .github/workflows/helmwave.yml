@@ -18,6 +18,7 @@ jobs:
           echo "env:" >> infrastructure/helm-chart/values.yaml
           echo "  API_ID: '${{ secrets.API_ID }}'" >> infrastructure/helm-chart/values.yaml
           echo "  API_HASH: '${{ secrets.API_HASH }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  SESSION_STRING: '${{ secrets.SESSION_STRING }}'" >> infrastructure/helm-chart/values.yaml
           echo "  TARGET_CHANNEL: '${{ secrets.TARGET_CHANNEL }}'" >> infrastructure/helm-chart/values.yaml
           echo "  OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'" >> infrastructure/helm-chart/values.yaml
           echo "  MODEL_NAME: '${{ secrets.MODEL_NAME }}'" >> infrastructure/helm-chart/values.yaml
