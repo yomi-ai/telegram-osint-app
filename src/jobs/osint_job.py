@@ -2,6 +2,7 @@ import asyncio
 
 from nest.core import Injectable
 
+from src.providers.healthchecks.healthchecks_service import HealthchecksService
 from src.providers.logger.logger_service import Logger
 from src.providers.openai.services.openai_service import OpenAIClientService
 from src.providers.processors.services.llm_pipeline_service import LLMPipelineService
@@ -15,13 +16,16 @@ class OsintJob:
         telegram_service: TelegramService,
         llm_pipeline_service: LLMPipelineService,
         logger_service: Logger,
+        healthchecks_service: HealthchecksService,
     ):
         self.telegram_service = telegram_service
         self.llm_pipeline_service = llm_pipeline_service
         self.logger_service = logger_service
+        self.healthchecks_service = healthchecks_service
 
     async def run(self):
         while True:
+            await self.healthchecks_service.healthchecks_signal_start()
             try:
                 telegram_messages = (
                     await self.telegram_service.fetch_messages_from_channels()
@@ -36,8 +40,10 @@ class OsintJob:
                     except Exception as e:
                         self.logger_service.log.error(e)
                         continue
+                await self.healthchecks_service.healthchecks_signal_success()
             except Exception as e:
                 self.logger_service.log.error(e)
+                await self.healthchecks_service.healthchecks_signal_fail()
             finally:
                 print("OsintJob finished")
                 await asyncio.sleep(10 * 60)

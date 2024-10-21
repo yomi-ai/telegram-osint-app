@@ -1,3 +1,5 @@
 /venv
 .env
 .helmwave
+__pycache__
+src/data
