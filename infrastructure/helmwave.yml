@@ -9,14 +9,7 @@ registries:
   max_history: 3 # best practice
 
 releases:
-  - name: kafka
-    chart:
-      name: oci://registry-1.docker.io/bitnamicharts/kafka
-      version: 30.1.5
-    values: [infrastructure/kafka.values.yml]
-    <<: *options
   - name: telegram-osint-app
     chart: infrastructure/helm-chart
-    depends_on: [kafka]
     <<: *options
 
