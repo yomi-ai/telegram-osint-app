@@ -1,9 +1,0 @@
-controller:
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 10m
-      memory: 10Mi
-listeners:
-  client:
-    protocol: PLAINTEXT
