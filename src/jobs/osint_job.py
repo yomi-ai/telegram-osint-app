@@ -36,7 +36,6 @@ class OsintJob:
                     except Exception as e:
                         self.logger_service.log.error(e)
                         continue
-
             except Exception as e:
                 self.logger_service.log.error(e)
             finally:
