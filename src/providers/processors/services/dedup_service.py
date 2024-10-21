@@ -21,7 +21,7 @@ class DeduplicationService:
     def deduplicate_messages(
         self,
         messages: List[dict],
-        similarity_threshold: float = 0.9,
+        similarity_threshold: float = 0.925,
     ) -> List[dict]:
         """
         Deduplicate messages based on similarity using embeddings.
