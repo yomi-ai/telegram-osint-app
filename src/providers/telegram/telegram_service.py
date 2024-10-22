@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 import re
 from pathlib import Path
+from telethon.tl.patched import Message
 
 
 from src.mongo_config import config  # Import the ODM config
