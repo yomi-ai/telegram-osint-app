@@ -3,7 +3,7 @@ from src.providers.logger.logger_service import Logger
 from src.providers.telegram.telegram_service import TelegramService
 from src.providers.processors.services.llm_pipeline_service import LLMPipelineService
 from src.providers.telegram.telegram_document import TelegramMessage
-
+from src.providers.healthchecks.healthchecks_service import HealthchecksService
 
 @Injectable()
 class OsintJob:
@@ -12,13 +12,17 @@ class OsintJob:
         telegram_service: TelegramService,
         llm_pipeline_service: LLMPipelineService,
         logger_service: Logger,
+        healthchecks_service: HealthchecksService
     ):
         self.telegram_service = telegram_service
         self.llm_pipeline_service = llm_pipeline_service
         self.logger_service = logger_service
+        self.healthchecks_service = healthchecks_service
 
-    async def run(self):
+
+async def run(self):
         while True:
+            await self.healthchecks_service.healthchecks_signal_start()
             try:
                 self.logger_service.info("Starting OSINTJob!")
                 # Retrieve messages from telegram
@@ -47,8 +51,10 @@ class OsintJob:
                 except Exception as e:
                     self.logger_service.error(f"Failed to send message due to {e}")
                     continue
+                await self.healthchecks_service.healthchecks_signal_success()
             except Exception as e:
                 self.logger_service.log.error(e)
+                await self.healthchecks_service.healthchecks_signal_fail()
             finally:
                 self.logger_service.debug("OsintJob finished")
                 await asyncio.sleep(10 * 60)
