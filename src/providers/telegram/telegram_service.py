@@ -54,6 +54,7 @@ class TelegramService:
         Saves the raw messages to MongoDB.
         """
         try:
+            self.logger.info(f"Start processing messages from - {channel_username}")
             result = []
             channel = await self._client.get_entity(channel_username)
             messages = await self._client.get_messages(channel, limit=limit)
@@ -66,11 +67,13 @@ class TelegramService:
             for message in filtered_messages:
                 try:
                     ist_time = message.date.astimezone(self.ISRAEL_TZ)
+                    if not message.message:
+                        continue
                     telegram_message = TelegramMessage(
                         channel=channel_username,
                         message_id=message.id,
                         timestamp=ist_time,
-                        content=message.message or "",
+                        content=message.message,
                         metadata={
                             "sender_id": message.sender_id,
                             "message_type": type(message).__name__,
@@ -92,6 +95,7 @@ class TelegramService:
                 except Exception as e:
                     self.logger.log.debug(f"Error processing message: {e}")
                     continue
+            self.logger.info(f"Finish processing messages from channel - {channel_username}")
             return result
         except Exception as e:
             self.logger.log.error(
@@ -105,6 +109,7 @@ class TelegramService:
         """
         Filters messages by keywords, updates them in MongoDB with relevant flags.
         """
+        self.logger.info(f"Start filtering messages by keywords. Number of initial messages - {len(messages)}")
         for msg in messages:
             is_relevant_message = False
             relevant_keyword = None
@@ -125,6 +130,8 @@ class TelegramService:
             # Update the message in MongoDB
             await msg.save()
 
+        self.logger.info(f"Finish filtering messages by keywords. Number of final messages - {len(messages)}")
+
         return messages
 
     async def deduplicate_messages(
@@ -133,6 +140,7 @@ class TelegramService:
         """
         Removes duplicates from the messages, updates them in MongoDB.
         """
+        self.logger.info(f"Start with removing duplications - {len(messages)}")
         deduped_messages = self.dedup_service.deduplicate_messages(
             messages, similarity_threshold
         )
@@ -142,6 +150,8 @@ class TelegramService:
             msg.passed_deduplication = msg.message_id in deduped_ids
             # Update the message in MongoDB
             await msg.save()
+
+        self.logger.info(f"Finish remove duplicate messages. Number of final messages - {len(messages)}")
 
         return messages
 

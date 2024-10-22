@@ -39,7 +39,7 @@ class DeduplicationService:
             return []
 
         # Extract message texts
-        message_texts: list[str] = [message.content for message in messages]
+        message_texts = [message.content for message in messages]
 
         # Generate embeddings using OpenAIClientService
         embeddings = self.openai_client_service.get_embeddings(message_texts)
