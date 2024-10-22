@@ -17,6 +17,7 @@ from src.providers.logger.logger_service import Logger
 from src.providers.telegram.telegram_model import TelegramSettings, CHANNELS, KEY_WORDS
 from src.providers.processors.services.dedup_service import DeduplicationService
 
+
 @Injectable()
 class TelegramService:
     ISRAEL_TZ = pytz.timezone("Asia/Jerusalem")
@@ -62,7 +63,9 @@ class TelegramService:
             current_time = datetime.utcnow().replace(tzinfo=pytz.UTC)
             threshold_time = current_time - timedelta(minutes=interval)
 
-            filtered_messages = [m for m in messages if m.date and m.date >= threshold_time]
+            filtered_messages = [
+                m for m in messages if m.date and m.date >= threshold_time
+            ]
 
             for message in filtered_messages:
                 try:
@@ -95,7 +98,9 @@ class TelegramService:
                 except Exception as e:
                     self.logger.log.debug(f"Error processing message: {e}")
                     continue
-            self.logger.info(f"Finish processing messages from channel - {channel_username}")
+            self.logger.info(
+                f"Finish processing messages from channel - {channel_username}"
+            )
             return result
         except Exception as e:
             self.logger.log.error(
@@ -109,7 +114,9 @@ class TelegramService:
         """
         Filters messages by keywords, updates them in MongoDB with relevant flags.
         """
-        self.logger.info(f"Start filtering messages by keywords. Number of initial messages - {len(messages)}")
+        self.logger.info(
+            f"Start filtering messages by keywords. Number of initial messages - {len(messages)}"
+        )
         for msg in messages:
             is_relevant_message = False
             relevant_keyword = None
@@ -130,7 +137,9 @@ class TelegramService:
             # Update the message in MongoDB
             await msg.save()
 
-        self.logger.info(f"Finish filtering messages by keywords. Number of final messages - {len(messages)}")
+        self.logger.info(
+            f"Finish filtering messages by keywords. Number of final messages - {len(messages)}"
+        )
 
         return messages
 
@@ -151,7 +160,9 @@ class TelegramService:
             # Update the message in MongoDB
             await msg.save()
 
-        self.logger.info(f"Finish remove duplicate messages. Number of final messages - {len(messages)}")
+        self.logger.info(
+            f"Finish remove duplicate messages. Number of final messages - {len(messages)}"
+        )
 
         return messages
 

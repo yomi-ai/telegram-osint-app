@@ -4,6 +4,7 @@ from src.providers.telegram.telegram_service import TelegramService
 from src.providers.processors.services.llm_pipeline_service import LLMPipelineService
 from src.providers.telegram.telegram_document import TelegramMessage
 
+
 @Injectable()
 class OsintJob:
     def __init__(
@@ -21,17 +22,27 @@ class OsintJob:
             try:
                 self.logger_service.info("Starting OSINTJob!")
                 # Retrieve messages from telegram
-                telegram_messages = await self.telegram_service.fetch_messages_from_channels()
+                telegram_messages = (
+                    await self.telegram_service.fetch_messages_from_channels()
+                )
                 # Process messages through LLM pipeline
-                processed_messages = await self.llm_pipeline_service.process_messages(telegram_messages)
+                processed_messages = await self.llm_pipeline_service.process_messages(
+                    telegram_messages
+                )
 
                 try:
                     for msg in processed_messages:
                         if msg.hebrew_translation:
                             message_to_send = msg.hebrew_translation
-                            message_to_send += f"\nhttps://t.me/{msg.channel}/{msg.message_id}"
-                            self.logger_service.info(f"Sending message to channel - message: \n{message_to_send}\n")
-                            await self.telegram_service.send_message_to_channel(message_to_send)
+                            message_to_send += (
+                                f"\nhttps://t.me/{msg.channel}/{msg.message_id}"
+                            )
+                            self.logger_service.info(
+                                f"Sending message to channel - message: \n{message_to_send}\n"
+                            )
+                            await self.telegram_service.send_message_to_channel(
+                                message_to_send
+                            )
                             await asyncio.sleep(5)
                 except Exception as e:
                     self.logger_service.error(f"Failed to send message due to {e}")

@@ -40,18 +40,24 @@ class Logger:
         """
         log_level = self.config_service.get("LOG_LEVEL", "INFO").upper()
         log_file = self.config_service.get("LOG_FILE", "app.log")
-        log_max_size = int(self.config_service.get("LOG_MAX_SIZE", 10485760))  # 10MB default
-        log_backup_count = int(self.config_service.get("LOG_BACKUP_COUNT", 5))  # 5 files by default
+        log_max_size = int(
+            self.config_service.get("LOG_MAX_SIZE", 10485760)
+        )  # 10MB default
+        log_backup_count = int(
+            self.config_service.get("LOG_BACKUP_COUNT", 5)
+        )  # 5 files by default
 
         # Set the overall log level
         self.log.setLevel(log_level)
 
         # Create formatters
         console_formatter = logging.Formatter(
-            "%(asctime)s %(name)s [%(levelname)s] %(context)s: %(message)s", "%Y-%m-%d %H:%M:%S"
+            "%(asctime)s %(name)s [%(levelname)s] %(context)s: %(message)s",
+            "%Y-%m-%d %H:%M:%S",
         )
         file_formatter = logging.Formatter(
-            "%(asctime)s %(name)s [%(levelname)s] %(context)s: %(message)s", "%Y-%m-%d %H:%M:%S"
+            "%(asctime)s %(name)s [%(levelname)s] %(context)s: %(message)s",
+            "%Y-%m-%d %H:%M:%S",
         )
 
         # Create and configure the console handler
@@ -63,7 +69,9 @@ class Logger:
         # Create and configure the file handler (with rotation)
         log_path = Path(os.path.dirname(log_file))
         log_path.mkdir(parents=True, exist_ok=True)
-        file_handler = RotatingFileHandler(log_file, maxBytes=log_max_size, backupCount=log_backup_count)
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=log_max_size, backupCount=log_backup_count
+        )
         file_handler.setLevel(log_level)
         file_handler.setFormatter(file_formatter)
         file_handler.addFilter(ContextualFilter())  # Add filter for context

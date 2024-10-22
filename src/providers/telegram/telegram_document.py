@@ -2,6 +2,7 @@ from beanie import Document, Indexed
 from typing import Optional, List, Dict
 from datetime import datetime
 
+
 class TelegramMessage(Document):
     channel: str
     message_id: Indexed(int)  # Indexed for faster queries
