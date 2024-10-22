@@ -5,8 +5,10 @@ import numpy as np
 from telethon.tl.types import Message
 from src.providers.logger.logger_service import Logger
 from src.providers.openai.services.openai_service import OpenAIClientService
+from src.providers.telegram.telegram_document import TelegramMessage
 
 BATCH_SIZE = 100  # Number of messages to process per batch for embeddings
+
 
 @Injectable()
 class DeduplicationService:
@@ -20,9 +22,9 @@ class DeduplicationService:
 
     def deduplicate_messages(
         self,
-        messages: List[dict],
+        messages: List[TelegramMessage],
         similarity_threshold: float = 0.925,
-    ) -> List[dict]:
+    ) -> List[TelegramMessage]:
         """
         Deduplicate messages based on similarity using embeddings.
 
@@ -37,13 +39,15 @@ class DeduplicationService:
             return []
 
         # Extract message texts
-        message_texts = [message['message'] for message in messages]
+        message_texts = [message.content for message in messages]
 
         # Generate embeddings using OpenAIClientService
         embeddings = self.openai_client_service.get_embeddings(message_texts)
 
         if embeddings is None:
-            self.logger_service.log.error("Failed to generate embeddings for deduplication.")
+            self.logger_service.log.error(
+                "Failed to generate embeddings for deduplication."
+            )
             return messages  # Return original messages if embeddings fail
 
         # Convert embeddings to NumPy array
@@ -66,6 +70,8 @@ class DeduplicationService:
                     messages_to_remove.add(j)
 
         # Filter out duplicate messages
-        deduplicated_messages = [msg for idx, msg in enumerate(messages) if idx not in messages_to_remove]
+        deduplicated_messages = [
+            msg for idx, msg in enumerate(messages) if idx not in messages_to_remove
+        ]
 
         return deduplicated_messages

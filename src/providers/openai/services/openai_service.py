@@ -24,10 +24,10 @@ class OpenAIClientService:
     """Service class to interact with OpenAI API and calculate costs."""
 
     def __init__(
-            self,
-            config_service: ConfigService,
-            cost_calculator_service: CostCalculatorService,
-            logger: Logger,
+        self,
+        config_service: ConfigService,
+        cost_calculator_service: CostCalculatorService,
+        logger: Logger,
     ):
         self.config_service = config_service
         self.model_name = self.config_service.get("MODEL_NAME")
@@ -50,12 +50,16 @@ class OpenAIClientService:
             Optional[List[List[float]]]: List of embeddings or None if failed.
         """
         embeddings = []
-        for i in tqdm(range(0, len(texts), self.BATCH_SIZE), desc="Generating embeddings"):
-            batch_texts = texts[i:i + self.BATCH_SIZE]
+        for i in tqdm(
+            range(0, len(texts), self.BATCH_SIZE), desc="Generating embeddings"
+        ):
+            batch_texts = texts[i : i + self.BATCH_SIZE]
             try:
                 response = openai.embeddings.create(
                     input=batch_texts,
-                    model=self.config_service.get("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
+                    model=self.config_service.get(
+                        "OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"
+                    ),
                 )
                 batch_embeddings = [message.embedding for message in response.data]
                 embeddings.extend(batch_embeddings)
@@ -68,12 +72,14 @@ class OpenAIClientService:
         """Encode an image from a file path to a base64 string."""
         try:
             with open(image_path, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode('utf-8')
+                return base64.b64encode(image_file.read()).decode("utf-8")
         except Exception as e:
             print(f"Error encoding image: {e}")
             return None
 
-    def _prepare_messages(self, system_message: str, user_message: str, image_path: Optional[str] = None):
+    def _prepare_messages(
+        self, system_message: str, user_message: str, image_path: Optional[str] = None
+    ):
         """Prepare messages to be sent to the API, with optional image encoding."""
         messages = [{"role": "system", "content": system_message}]
 
@@ -83,7 +89,10 @@ class OpenAIClientService:
             if base64_image:
                 user_content = [
                     {"type": "text", "text": user_message},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    },
                 ]
             else:
                 user_content = user_message
@@ -93,8 +102,12 @@ class OpenAIClientService:
         messages.append({"role": "user", "content": user_content})
         return messages
 
-    def _build_api_payload(self, messages, response_format: Optional[BaseModel] = None,
-                           max_completion_tokens: Optional[int] = None):
+    def _build_api_payload(
+        self,
+        messages,
+        response_format: Optional[BaseModel] = None,
+        max_completion_tokens: Optional[int] = None,
+    ):
         """Build the payload for the OpenAI API request."""
         api_payload = {
             "model": self.model_name,
@@ -110,15 +123,19 @@ class OpenAIClientService:
     def _calculate_cost(self, messages, response):
         """Calculate and accumulate the cost of the prompt and completion."""
         # Calculate prompt cost
-        full_prompt = "".join([msg['content'] for msg in messages if 'content' in msg])
-        has_image = any("image_url" in msg['content'] for msg in messages)
-        prompt_cost = self.cost_calculator_service.calculate_prompt_cost(full_prompt, has_image=has_image)
+        full_prompt = "".join([msg["content"] for msg in messages if "content" in msg])
+        has_image = any("image_url" in msg["content"] for msg in messages)
+        prompt_cost = self.cost_calculator_service.calculate_prompt_cost(
+            full_prompt, has_image=has_image
+        )
         self.total_prompt_cost += prompt_cost
 
         # Calculate completion cost if response is available
         if response and response.choices:
             completion_text = response.choices[0].message.content
-            completion_cost = self.cost_calculator_service.calculate_completion_cost(completion_text)
+            completion_cost = self.cost_calculator_service.calculate_completion_cost(
+                completion_text
+            )
             self.total_completion_cost += completion_cost
 
     def _handle_response(self, response):
@@ -143,15 +160,23 @@ class OpenAIClientService:
             print(f"Error calling OpenAI API: {e}")
             return None
 
-    def chat(self, system_message: str, user_message: str, image_path: Optional[str] = None,
-             response_format: Optional[BaseModel] = None, max_completion_tokens: Optional[int] = 1000):
+    def chat(
+        self,
+        system_message: str,
+        user_message: str,
+        image_path: Optional[str] = None,
+        response_format: Optional[BaseModel] = None,
+        max_completion_tokens: Optional[int] = 1000,
+    ):
         """Main method to send a chat request to OpenAI with optional image input."""
 
         # Step 1: Prepare messages
         messages = self._prepare_messages(system_message, user_message, image_path)
 
         # Step 2: Build API payload
-        api_payload = self._build_api_payload(messages, response_format, max_completion_tokens)
+        api_payload = self._build_api_payload(
+            messages, response_format, max_completion_tokens
+        )
 
         # Step 3: Make the API call
         response = self._make_api_call(api_payload)

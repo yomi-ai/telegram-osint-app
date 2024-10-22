@@ -2,12 +2,14 @@ from nest.core import Injectable
 
 from src.providers.openai.services.openai_service import OpenAIClientService
 from src.providers.processors.processors_model import TranslationResponse
+from src.providers.logger.logger_service import Logger
 
 
 @Injectable()
 class TranslationService:
-    def __init__(self, client: OpenAIClientService):
+    def __init__(self, client: OpenAIClientService, logger: Logger):
         self.client = client
+        self.logger = logger
 
     def translate(self, message: str) -> TranslationResponse:
         system_message = """
@@ -22,4 +24,5 @@ class TranslationService:
             )
             return response
         except Exception as e:
-            return TranslationResponse(hebrew=None, english=None)
+            self.logger.log.error(f"Failed to translate message: {e}")
+            raise e

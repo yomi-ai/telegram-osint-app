@@ -9,7 +9,7 @@ jobs:
       - uses: helmwave/setup-action@v0.3.0
         name: Install helmwave
         with:
-          version: "0.41.1"
+          version: '0.41.1'
       - name: Configure values
         run: |
           echo -e "image:\n  tag: sha-${GITHUB_SHA::7}" > infrastructure/helm-chart/values.yaml
@@ -23,6 +23,11 @@ jobs:
           echo "  OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'" >> infrastructure/helm-chart/values.yaml
           echo "  MODEL_NAME: '${{ secrets.MODEL_NAME }}'" >> infrastructure/helm-chart/values.yaml
           echo "  HEALTHCHECKS_PING_KEY: '${{ secrets.HEALTHCHECKS_PING_KEY }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_NAME: '${{ secrets.MONGO_DB_NAME }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_HOST: '${{ secrets.MONGO_DB_HOST }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_PORT: '${{ secrets.MONGO_DB_PORT }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_USERNAME: '${{ secrets.MONGO_DB_USERNAME }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_PASSWORD: '${{ secrets.MONGO_DB_PASSWORD }}'" >> infrastructure/helm-chart/values.yaml
       - name: Setup kubeconfig
         run: |
           mkdir ${HOME}/.kube
