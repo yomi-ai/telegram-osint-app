@@ -10,6 +10,7 @@ env:
   TARGET_CHANNEL: null
   OPENAI_API_KEY: null
   MODEL_NAME: null
+  HEALTHCHECKS_PING_KEY: null
   MONGO_DB_NAME: null
   MONGO_DB_HOST: null
   MONGO_DB_PORT: null
