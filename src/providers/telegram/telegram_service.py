@@ -1,99 +1,21 @@
-import asyncio
-import json
-import re
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import IO
-from tqdm import tqdm
-import pandas as pd
-import pytz
+from typing import List
+from beanie import PydanticObjectId
 from nest.core import Injectable
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from telethon.tl.patched import Message
+import pytz
+from datetime import datetime, timedelta
+from tqdm import tqdm
+import re
+from pathlib import Path
 
+
+from src.mongo_config import config  # Import the ODM config
+from src.providers.telegram.telegram_document import TelegramMessage
 from src.providers.config.config_service import ConfigService
 from src.providers.logger.logger_service import Logger
-from src.providers.telegram.telegram_model import TelegramSettings
+from src.providers.telegram.telegram_model import TelegramSettings, CHANNELS, KEY_WORDS
 from src.providers.processors.services.dedup_service import DeduplicationService
-
-CHANNELS = [
-    "From_hebron",
-    "HebMix",
-    "HebronNewss",
-    "abn_alkhalil",
-    "khalelnews",
-    "baninaem24",
-    "baninaeim22",
-    "moltaqaidna0",
-    "dahriyah3",
-    "DuraCity",
-    "doura2000",
-    "z_0halhul",
-    "halhul2024",
-    "alsamou_alhadth",
-    "Alsamo3News",
-    "bietommar",
-    "S3EERR",
-    "saeare",
-]
-
-KEY_WORDS = [
-    "الظاهرية",
-    "دورا",
-    "الخليل",
-    "حلحول",
-    "يطا",
-    "مجالس محلية",
-    "إذنا",
-    "السموع",
-    "بيت عوا",
-    "بيت أولا",
-    "بيت أمر",
-    "بني نعيم",
-    "دير سامت",
-    "خاراس",
-    "نوبا",
-    "سعير",
-    "صوريف",
-    "تفوح",
-    "ترقوميا",
-    "الدوّارة",
-    "الطبقة",
-    "البقعة",
-    "البرج",
-    "الحيلة",
-    "الكوم",
-    "الكرمل",
-    "قيلة",
-    "أمريش",
-    "الصورة",
-    "الريحية",
-    "الشيوخ",
-    "بيت الروش الفوقا",
-    "بيت كاحل",
-    "بيت عمرة",
-    "بيت عنون",
-    "جبع",
-    "دير العسل الفوقا",
-    "زيف",
-    "خلة المية",
-    "حدب الفوار",
-    "حوريس",
-    "خربة السيميا",
-    "خربة العدسية",
-    "خربة كرمة",
-    "خربة صفا",
-    "خرسا",
-    "كريسة الشرقية",
-    "قلقاس",
-    "رابود",
-    "الرماضين",
-    "شيوخ العروب",
-    "العروب",
-    "الفوار",
-]
-
 
 @Injectable()
 class TelegramService:
@@ -124,74 +46,49 @@ class TelegramService:
         )
         self.dedup_service = dedup_service
 
-    # async def filter_relevant_messages(self, messages: list[Message], interval: int = 5) -> list[Message]:
-
     async def read_messages_from_channel(
         self, channel_username: str, limit: int = 100, interval: int = 5
-    ) -> list[dict]:
+    ) -> List[TelegramMessage]:
         """
         Reads messages from a specified Telegram channel within the given time interval.
-
-        :param channel_username: Username of the channel to read messages from.
-        :param limit: Number of messages to fetch from the channel.
-        :param interval: Time interval in minutes to filter messages.
-        :return: List of filtered message objects.
+        Saves the raw messages to MongoDB.
         """
         try:
             result = []
             channel = await self._client.get_entity(channel_username)
             messages = await self._client.get_messages(channel, limit=limit)
 
-            # Current UTC time
             current_time = datetime.utcnow().replace(tzinfo=pytz.UTC)
-            # Threshold time
             threshold_time = current_time - timedelta(minutes=interval)
 
-            # Filter messages after the threshold time
-            filtered_messages = [
-                m for m in messages if m.date and m.date >= threshold_time
-            ]
+            filtered_messages = [m for m in messages if m.date and m.date >= threshold_time]
 
-            # Create a structured JSON result for each message
-            for message in tqdm(filtered_messages):
+            for message in filtered_messages:
                 try:
-                    is_relevant_message = False
-                    relevant_keyword = None
-
-                    words = re.findall(r"\b\w+\b", message.message)
-
-                    for keyword in KEY_WORDS:
-                        if keyword in words:
-                            is_relevant_message = True
-                            relevant_keyword = keyword
-                            break  # Exit the loop after finding a relevant keyword
-                    if not is_relevant_message:
-                        continue  # Skip to the next message if not relevant
-                    print(
-                        f"message-[{message.message}] | relevant_keyword=[{relevant_keyword}]"
-                    )
                     ist_time = message.date.astimezone(self.ISRAEL_TZ)
-                    message_json = {
-                        "channel": channel_username,
-                        "message_id": message.id,
-                        "timestamp": ist_time.strftime("%Y-%m-%d %H:%M:%S"),
-                        "message": message.message or "",
-                        "metadata": {
+                    telegram_message = TelegramMessage(
+                        channel=channel_username,
+                        message_id=message.id,
+                        timestamp=ist_time,
+                        content=message.message or "",
+                        metadata={
                             "sender_id": message.sender_id,
                             "message_type": type(message).__name__,
                         },
-                        "media": [],
-                        "relevant_keywords": relevant_keyword or "",
-                    }
+                        media=[],
+                    )
 
-                    # Check if the message contains media
+                    # Check for media attachments
                     if message.media:
                         media_type = type(message.media).__name__
-                        message_json["media"].append(
+                        telegram_message.media.append(
                             {"media_type": media_type, "media_id": message.id}
                         )
 
-                    result.append(message_json)
+                    # Save the raw message to MongoDB
+                    await telegram_message.create()
+
+                    result.append(telegram_message)
                 except Exception as e:
                     self.logger.log.debug(f"Error processing message: {e}")
                     continue
@@ -202,31 +99,58 @@ class TelegramService:
             )
             return []
 
-    async def send_message_to_channel(self, message_text: str) -> bool:
+    async def filter_messages_by_keywords(
+        self, messages: List[TelegramMessage], keywords: List[str]
+    ) -> List[TelegramMessage]:
         """
-        Sends a message to a specific Telegram channel.
+        Filters messages by keywords, updates them in MongoDB with relevant flags.
+        """
+        for msg in messages:
+            is_relevant_message = False
+            relevant_keyword = None
 
-        :param channel_username: The username of the target channel.
-        :param message_text: The message content to be sent.
-        """
-        try:
-            await self._client.start()
-            channel = await self._client.get_entity(self.target_channel)
-            await self._client.send_message(channel, message_text)
-            print(f"Message sent to {channel.title}: {message_text}")
-            return True
-        except Exception as e:
-            print(f"Error sending message to channel: {e}")
-            return False
-        finally:
-            await self.disconnect()
+            words = re.findall(r"\b\w+\b", msg.content)
 
-    async def fetch_messages_from_channels(self) -> pd.DataFrame:
+            for keyword in KEY_WORDS:
+                if keyword in words:
+                    is_relevant_message = True
+                    relevant_keyword = keyword
+                    break  # Exit the loop after finding a relevant keyword
+            if not is_relevant_message:
+                continue  # Skip to the next message if not relevant
+
+            msg.passed_keyword_filter = is_relevant_message
+            msg.relevant_keywords = [relevant_keyword]
+
+            # Update the message in MongoDB
+            await msg.save()
+
+        return messages
+
+    async def deduplicate_messages(
+        self, messages: List[TelegramMessage], similarity_threshold: float = 0.89
+    ) -> List[TelegramMessage]:
         """
-        Fetches messages from multiple Telegram channels and returns them.
+        Removes duplicates from the messages, updates them in MongoDB.
         """
-        messages: list[dict] = []
-        await self._client.start()
+        deduped_messages = self.dedup_service.deduplicate_messages(
+            messages, similarity_threshold
+        )
+        deduped_ids = {msg.message_id for msg in deduped_messages}
+
+        for msg in messages:
+            msg.passed_deduplication = msg.message_id in deduped_ids
+            # Update the message in MongoDB
+            await msg.save()
+
+        return messages
+
+    async def fetch_messages_from_channels(self) -> List[TelegramMessage]:
+        """
+        Fetches messages from multiple channels, processes them (filters and deduplicates),
+        and returns the processed list of messages.
+        """
+        messages: List[TelegramMessage] = []
         async with self._client:
             for channel in CHANNELS:
                 channel_messages = await self.read_messages_from_channel(
@@ -236,22 +160,27 @@ class TelegramService:
                 )
                 messages.extend(channel_messages)
 
-        await self.disconnect()
+        # Filter messages by keywords
+        messages = await self.filter_messages_by_keywords(messages, KEY_WORDS)
 
-        # remove dedup messages
-        dedup_messages = self.dedup_service.deduplicate_messages(
-            messages
-        )
+        # Deduplicate messages
+        messages = await self.deduplicate_messages(messages)
 
-        # Audit the messages
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        audit_file_path = Path(f"{self.ABS_PATH}/data/{timestamp}/messages.json")
-        audit_file_path.parent.mkdir(parents=True, exist_ok=True)
+        return messages
 
-        with open(audit_file_path, "w") as file:
-            json.dump(dedup_messages, file, indent=4, ensure_ascii=False)
-
-        return pd.json_normalize(dedup_messages)
+    async def send_message_to_channel(self, message_text: str) -> bool:
+        """
+        Sends a message to the specified Telegram channel.
+        """
+        try:
+            async with self._client:
+                channel = await self._client.get_entity(self.target_channel)
+                await self._client.send_message(channel, message_text)
+                self.logger.log.info(f"Message sent to {channel.title}: {message_text}")
+            return True
+        except Exception as e:
+            print(f"Error sending message to channel: {e}")
+            return False
 
     async def disconnect(self):
         """
