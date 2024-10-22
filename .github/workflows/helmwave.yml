@@ -22,6 +22,11 @@ jobs:
           echo "  TARGET_CHANNEL: '${{ secrets.TARGET_CHANNEL }}'" >> infrastructure/helm-chart/values.yaml
           echo "  OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'" >> infrastructure/helm-chart/values.yaml
           echo "  MODEL_NAME: '${{ secrets.MODEL_NAME }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_NAME: '${{ secrets.MONGO_DB_NAME }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_HOST: '${{ secrets.MONGO_DB_HOST }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_PORT: '${{ secrets.MONGO_DB_PORT }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_USERNAME: '${{ secrets.MONGO_DB_USERNAME }}'" >> infrastructure/helm-chart/values.yaml
+          echo "  MONGO_DB_PASSWORD: '${{ secrets.MONGO_DB_PASSWORD }}'" >> infrastructure/helm-chart/values.yaml
       - name: Setup kubeconfig
         run: |
           mkdir ${HOME}/.kube
