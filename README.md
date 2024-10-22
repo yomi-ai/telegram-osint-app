@@ -1,5 +1,7 @@
 # Telegram Based App For OSINT
 
+![healthchecks.io](https://healthchecks.io/badge/949d5bcd-bbfb-4d3c-9cca-cb43cf/6Qx1bGGj-2.svg)
+
 This is a Python application designed for Open Source Intelligence (OSINT) that leverages Telegram channels to collect, process, and analyze data. The application uses the **PyNest** framework for modularity and dependency injection, and integrates with the OpenAI API for advanced processing.
 
 ## Table of Contents
