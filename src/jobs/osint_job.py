@@ -1,3 +1,6 @@
+import asyncio
+
+
 from nest.core import Injectable
 from src.providers.logger.logger_service import Logger
 from src.providers.telegram.telegram_service import TelegramService
