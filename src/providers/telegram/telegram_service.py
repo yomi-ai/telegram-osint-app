@@ -9,7 +9,6 @@ from tqdm import tqdm
 import re
 from pathlib import Path
 
-
 from src.mongo_config import config  # Import the ODM config
 from src.providers.telegram.telegram_document import TelegramMessage
 from src.providers.config.config_service import ConfigService
@@ -24,11 +23,11 @@ class TelegramService:
     ABS_PATH = Path(__file__).resolve().parent.parent.parent
 
     def __init__(
-        self,
-        config_service: ConfigService,
-        logger: Logger,
-        dedup_service: DeduplicationService,
-        telegram_settings: TelegramSettings = TelegramSettings(),
+            self,
+            config_service: ConfigService,
+            logger: Logger,
+            dedup_service: DeduplicationService,
+            telegram_settings: TelegramSettings = TelegramSettings(),
     ):
         self.config_service = config_service
         self.telegram_settings = telegram_settings
@@ -48,7 +47,7 @@ class TelegramService:
         self.dedup_service = dedup_service
 
     async def read_messages_from_channel(
-        self, channel_username: str, limit: int = 100, interval: int = 5
+            self, channel_username: str, limit: int = 100, interval: int = 5
     ) -> List[TelegramMessage]:
         """
         Reads messages from a specified Telegram channel within the given time interval.
@@ -109,7 +108,7 @@ class TelegramService:
             return []
 
     async def filter_messages_by_keywords(
-        self, messages: List[TelegramMessage], keywords: List[str]
+            self, messages: List[TelegramMessage], keywords: List[str]
     ) -> List[TelegramMessage]:
         """
         Filters messages by keywords, updates them in MongoDB with relevant flags.
@@ -144,7 +143,7 @@ class TelegramService:
         return messages
 
     async def deduplicate_messages(
-        self, messages: List[TelegramMessage], similarity_threshold: float = 0.89
+            self, messages: List[TelegramMessage], similarity_threshold: float = 0.89
     ) -> List[TelegramMessage]:
         """
         Removes duplicates from the messages, updates them in MongoDB.
@@ -195,7 +194,7 @@ class TelegramService:
         """
         try:
             async with self._client:
-                channel = await self._client.get_entity(self.target_channel)
+                channel = await self._client.get_entity("https://t.me/+85aIBgMBjHM3Zjlk")
                 await self._client.send_message(channel, message_text)
                 self.logger.log.info(f"Message sent to {channel.title}: {message_text}")
             return True
