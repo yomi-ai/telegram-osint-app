@@ -194,7 +194,7 @@ class TelegramService:
         """
         try:
             async with self._client:
-                channel = await self._client.get_entity("https://t.me/+85aIBgMBjHM3Zjlk")
+                channel = await self._client.get_entity(self.target_channel)
                 await self._client.send_message(channel, message_text)
                 self.logger.log.info(f"Message sent to {channel.title}: {message_text}")
             return True
