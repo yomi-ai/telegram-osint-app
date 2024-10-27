@@ -17,7 +17,7 @@ from src.mongo_config import config  # Import the ODM config
 from src.providers.config.config_service import ConfigService
 from src.providers.logger.logger_service import Logger
 from src.providers.telegram.telegram_document import TelegramMessage
-from src.providers.telegram.telegram_model import CHANNELS, KEY_WORDS, TelegramSettings
+from src.providers.telegram.telegram_model import CHANNELS, KEY_WORDS
 
 
 @Injectable()
