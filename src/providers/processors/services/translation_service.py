@@ -1,8 +1,8 @@
 from nest.core import Injectable
 
+from src.providers.logger.logger_service import Logger
 from src.providers.openai.services.openai_service import OpenAIClientService
 from src.providers.processors.processors_model import TranslationResponse
-from src.providers.logger.logger_service import Logger
 
 
 @Injectable()

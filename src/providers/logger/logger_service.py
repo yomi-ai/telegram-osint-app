@@ -1,8 +1,10 @@
 import logging
 import os
-from pathlib import Path
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
 from nest.core import Injectable
+
 from src.providers.config.config_service import ConfigService
 
 
