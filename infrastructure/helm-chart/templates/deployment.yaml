@@ -6,6 +6,8 @@ metadata:
     app: {{ .Chart.Name }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
@@ -34,4 +36,4 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 10Mi
+              memory: 222Mi

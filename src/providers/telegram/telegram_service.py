@@ -13,7 +13,7 @@ from telethon.events import NewMessage
 from telethon.sessions import StringSession
 from tqdm import tqdm
 
-from src.mongo_config import config  # Import the ODM config
+from src.mongo_config import config
 from src.providers.config.config_service import ConfigService
 from src.providers.logger.logger_service import Logger
 from src.providers.telegram.telegram_document import TelegramMessage
