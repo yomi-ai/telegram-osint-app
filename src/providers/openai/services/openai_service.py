@@ -1,21 +1,19 @@
 # src/services/openai_client_service.py
 import base64
 import os
-from typing import Optional
+from typing import List, Optional
 
 import openai
 from dotenv import load_dotenv
 from nest.core import Injectable
 from pydantic import BaseModel
+from tqdm import tqdm
 
 from src.providers.config.config_service import ConfigService
 from src.providers.cost_calculator.services.cost_calculator_service import (
     CostCalculatorService,
 )
-
-from typing import List, Optional
 from src.providers.logger.logger_service import Logger
-from tqdm import tqdm
 
 
 @Injectable()
