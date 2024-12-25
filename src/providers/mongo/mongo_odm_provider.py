@@ -1,9 +1,11 @@
 import os
 from ast import Index
 from typing import List
+
 from beanie import Document, init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from nest.core.database.odm_config import ConfigFactory
+
 from src.providers.config.config_service import ConfigService
 
 

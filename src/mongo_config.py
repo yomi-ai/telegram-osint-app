@@ -1,11 +1,10 @@
 import os
 
+from beanie import Document
 from dotenv import load_dotenv
 
 from src.providers.mongo.mongo_odm_provider import MongoODMProvider
 from src.providers.telegram.telegram_document import TelegramMessage
-from beanie import Document
-
 
 load_dotenv()
 

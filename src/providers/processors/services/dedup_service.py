@@ -1,8 +1,9 @@
-from typing import List, Dict
+from typing import List, Tuple
+
+import numpy as np
 from nest.core import Injectable
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
-from telethon.tl.types import Message
+
 from src.providers.logger.logger_service import Logger
 from src.providers.openai.services.openai_service import OpenAIClientService
 from src.providers.telegram.telegram_document import TelegramMessage
@@ -29,11 +30,11 @@ class DeduplicationService:
         Deduplicate messages based on similarity using embeddings.
 
         Args:
-            messages (List[Message]): List of messages to deduplicate.
+            messages (List[TelegramMessage]): List of messages to deduplicate.
             similarity_threshold (float): Threshold above which messages are considered duplicates.
 
         Returns:
-            List[Message]: List of deduplicated messages.
+            List[TelegramMessage]: List of deduplicated messages.
         """
         if not messages:
             return []
@@ -75,3 +76,58 @@ class DeduplicationService:
         ]
 
         return deduplicated_messages
+
+    def is_similar_to_any(
+        self,
+        target_message: TelegramMessage,
+        other_messages: List[TelegramMessage],
+        similarity_threshold: float = 0.925,
+    ) -> Tuple[bool, List[TelegramMessage]]:
+        """
+        Checks if the target message is too similar to any message in a list of other messages.
+
+        Args:
+            target_message (TelegramMessage): The message to check for similarity.
+            other_messages (List[TelegramMessage]): List of other messages to compare against.
+            similarity_threshold (float): Threshold above which messages are considered duplicates.
+
+        Returns:
+            Tuple[bool, List[TelegramMessage]]: A tuple containing a boolean indicating similarity and a list of similar messages.
+        """
+        if not other_messages:
+            return False, []
+
+        # Get embeddings for the target message and other messages
+        target_embedding = self.openai_client_service.get_embeddings(
+            [target_message.content]
+        )
+        if not target_embedding:
+            self.logger_service.log.error(
+                "Failed to generate embedding for target message."
+            )
+            return False, []
+        target_embedding = target_embedding[0]
+
+        other_texts = [msg.content for msg in other_messages]
+        other_embeddings = self.openai_client_service.get_embeddings(other_texts)
+        if not other_embeddings:
+            self.logger_service.log.error(
+                "Failed to generate embeddings for other messages."
+            )
+            return False, []
+
+        # Calculate cosine similarity between target message and each other message
+        similarities = cosine_similarity([target_embedding], other_embeddings)[0]
+
+        # Identify messages exceeding the similarity threshold
+        similar_indices = [
+            i
+            for i, similarity in enumerate(similarities)
+            if similarity >= similarity_threshold
+        ]
+
+        if similar_indices:
+            similar_messages = [other_messages[i] for i in similar_indices]
+            return True, similar_messages
+        else:
+            return False, []

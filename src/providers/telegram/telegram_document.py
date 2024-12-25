@@ -1,6 +1,7 @@
-from beanie import Document, Indexed
-from typing import Optional, List, Dict
 from datetime import datetime
+from typing import Dict, List, Optional
+
+from beanie import Document, Indexed
 
 
 class TelegramMessage(Document):
