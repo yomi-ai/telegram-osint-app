@@ -30,7 +30,7 @@ class OpenAIClientService:
         logger: Logger,
     ):
         self.config_service = config_service
-        self.model_name = self.config_service.get("MODEL_NAME")
+        self.model_name = "gpt-4o-mini-2024-07-18"
         self.cost_calculator_service = cost_calculator_service
         self.logger = logger
         openai.api_key = self.config_service.get("OPENAI_API_KEY")
