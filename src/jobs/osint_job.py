@@ -22,41 +22,68 @@ class OsintJob:
         self.llm_pipeline_service = llm_pipeline_service
         self.logger_service = logger_service
         self.healthchecks_service = healthchecks_service
+        self.regions = ["hebron", "etzion"]
+
+    async def process_region(self, region: str):
+        """Process messages for a specific region"""
+        try:
+            self.logger_service.info(f"Processing region: {region}")
+            # Retrieve messages from telegram for this region
+            telegram_messages = await self.telegram_service.fetch_messages_for_region(
+                region
+            )
+
+            # Process messages through LLM pipeline
+            processed_messages = await self.llm_pipeline_service.process_messages(
+                telegram_messages
+            )
+
+            # Send messages to the appropriate channel
+            try:
+                for msg in processed_messages:
+                    if msg.hebrew_translation:
+                        message_to_send = msg.hebrew_translation
+                        message_to_send += (
+                            f"\nhttps://t.me/{msg.channel}/{msg.message_id}"
+                        )
+                        self.logger_service.info(
+                            f"Sending message to {region} channel - message: \n{message_to_send}\n"
+                        )
+                        await self.telegram_service.send_message_to_region(
+                            region, message_to_send
+                        )
+                        await asyncio.sleep(5)
+            except Exception as e:
+                self.logger_service.error(
+                    f"Failed to send message for {region} due to {e}"
+                )
+
+            return True
+        except Exception as e:
+            self.logger_service.error(f"Error processing region {region}: {e}")
+            return False
 
     async def run(self):
         while True:
             await self.healthchecks_service.healthchecks_signal_start()
+            success = True
+
             try:
                 self.logger_service.info("Starting OSINTJob!")
-                # Retrieve messages from telegram
-                telegram_messages = (
-                    await self.telegram_service.fetch_messages_from_channels()
-                )
-                # Process messages through LLM pipeline
-                processed_messages = await self.llm_pipeline_service.process_messages(
-                    telegram_messages
-                )
 
-                try:
-                    for msg in processed_messages:
-                        if msg.hebrew_translation:
-                            message_to_send = msg.hebrew_translation
-                            message_to_send += (
-                                f"\nhttps://t.me/{msg.channel}/{msg.message_id}"
-                            )
-                            self.logger_service.info(
-                                f"Sending message to channel - message: \n{message_to_send}\n"
-                            )
-                            await self.telegram_service.send_message_to_channel(
-                                message_to_send
-                            )
-                            await asyncio.sleep(5)
-                except Exception as e:
-                    self.logger_service.error(f"Failed to send message due to {e}")
-                    continue
-                await self.healthchecks_service.healthchecks_signal_success()
+                # Process each region
+                for region in self.regions:
+                    region_success = await self.process_region(region)
+                    if not region_success:
+                        success = False
+
+                if success:
+                    await self.healthchecks_service.healthchecks_signal_success()
+                else:
+                    await self.healthchecks_service.healthchecks_signal_fail()
+
             except Exception as e:
-                self.logger_service.log.error(e)
+                self.logger_service.log.error(f"Job failed: {e}")
                 await self.healthchecks_service.healthchecks_signal_fail()
             finally:
                 self.logger_service.debug("OsintJob finished")
