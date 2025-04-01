@@ -181,12 +181,12 @@ CHANNEL_CONFIGS = {
         "input_channels": HEBRON_CHANNELS,
         "keywords": HEBRON_KEYWORDS,
         "exclude_words": [],
-        "output_channel": lambda: decode_channel(HEBRON_OUTPUT_CHANNEL_ENCODED),
+        "output_channel": "https://t.me/+85aIBgMBjHM3Zjlk",
     },
     "etzion": {
         "input_channels": ETZION_CHANNELS,
         "keywords": ETZION_KEYWORDS,
         "exclude_words": ETZION_EXCLUDE_WORDS,
-        "output_channel": lambda: decode_channel(ETZION_OUTPUT_CHANNEL_ENCODED),
+        "output_channel": "https://t.me/+ht-89OlFtKRmODc0",
     },
 }
